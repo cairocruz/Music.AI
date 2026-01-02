@@ -478,8 +478,11 @@ if ((process.env.NODE_ENV ?? '').toLowerCase() === 'production') {
   const distDir = path.resolve(__dirname, '..', 'dist')
 
   app.use(express.static(distDir))
-  // Express 5 (path-to-regexp v6) does not accept the bare "*" route.
-  app.get('/*', (req, res) => {
+
+  // SPA fallback (avoid Express 5 wildcard route patterns like "*" / "/*").
+  // If the request wasn't handled by static files and isn't an API route,
+  // serve the frontend app.
+  app.use((req, res) => {
     if (req.path.startsWith('/api/')) return res.status(404).end()
     return res.sendFile(path.join(distDir, 'index.html'))
   })
