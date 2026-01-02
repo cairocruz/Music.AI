@@ -478,7 +478,8 @@ if ((process.env.NODE_ENV ?? '').toLowerCase() === 'production') {
   const distDir = path.resolve(__dirname, '..', 'dist')
 
   app.use(express.static(distDir))
-  app.get('*', (req, res) => {
+  // Express 5 (path-to-regexp v6) does not accept the bare "*" route.
+  app.get('/*', (req, res) => {
     if (req.path.startsWith('/api/')) return res.status(404).end()
     return res.sendFile(path.join(distDir, 'index.html'))
   })
