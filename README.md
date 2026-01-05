@@ -129,9 +129,9 @@ Para testar a compra de alguma música no Marketplace, use os **cartões de test
 
 ```mermaid
 flowchart LR
-  U[Usuário (Browser)] -->|SPA| FE[Frontend React + Vite]
-  FE -->|Supabase Auth| SB[(Supabase Auth + DB)]
-  FE -->|POST /api/*| API[Backend Node.js + Express]
+  U["Usuário (Browser)"] -->|SPA| FE["Frontend React + Vite"]
+  FE -->|Supabase Auth| SB[("Supabase Auth + DB")]
+  FE -->|POST /api/*| API["Backend Node.js + Express"]
 
   API -->|Valida token| SB
   API -->|Webhook| N8N[n8n Agents]
