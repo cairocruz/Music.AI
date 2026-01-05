@@ -1,0 +1,1229 @@
+{
+  "name": "Agent Marketing ok",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/stage/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"timeline\": {\n    \"tracks\": [\n      {\n        \"clips\": [\n          {\n            \"asset\": {\n              \"type\": \"video\",\n              \"src\": \"{{ $('Webhook').item.json.body.url_video }}\",\n              \"trim\": {{ $json.output.start_time }}\n            },\n            \"start\": 0,\n            \"length\":{{ $json.output.duration_seconds }}\n          }\n        ]\n      }\n    ]\n  },\n  \"output\": {\n    \"format\": \"mp4\",\n    \"resolution\": \"sd\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        96,
+        704
+      ],
+      "id": "dd246e7a-4518-4b66-a3e5-a7e00f4919a5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.shotstack.io/stage/render/{{ $json.response.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        688,
+        736
+      ],
+      "id": "e0469a6f-414a-47d4-9ce2-73723c417ccb",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url_download }}",
+        "responseFormat": "file",
+        "options": {}
+      },
+      "name": "Download Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        2896,
+        848
+      ],
+      "id": "5b0d91e9-bbfe-4725-87b8-d82bb5f425bf"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "media_type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "media_category",
+              "value": "tweet_video"
+            }
+          ],
+          "number": [
+            {
+              "name": "total_bytes",
+              "value": "={{ $('HTTP Request3').item.json.headers['content-length'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Metadata",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        4016,
+        992
+      ],
+      "id": "1784a07d-2fcc-4a26-9fda-de303e206258"
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "requestMethod": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "command",
+              "value": "INIT"
+            },
+            {
+              "name": "media_type",
+              "value": "=video/mp4"
+            },
+            {
+              "name": "total_bytes",
+              "value": "={{ $('Merge1').item.json.headers[\"content-length\"] }}"
+            },
+            {
+              "name": "media_category",
+              "value": "={{$json[\"media_category\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "INIT Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        4464,
+        1232
+      ],
+      "id": "0e440651-1a0a-43f4-b563-6c3044653d18",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "Y4hj4OR7PMsQsJs6",
+          "name": "X account"
+        },
+        "oAuth1Api": {
+          "id": "fp3aJHCO3dQXbpKx",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "requestMethod": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "command",
+              "value": "FINALIZE"
+            },
+            {
+              "name": "media_id",
+              "value": "={{ $('Merge').item.json.media_id_string }}"
+            }
+          ]
+        }
+      },
+      "name": "FINALIZE Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        5328,
+        1104
+      ],
+      "id": "9c81d719-3122-4363-9b04-7752cb51715b",
+      "credentials": {
+        "oAuth1Api": {
+          "id": "fp3aJHCO3dQXbpKx",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Percorre todos os itens que chegaram no nó\nreturn items.map(item => {\n  const data = item.json;\n\n  // 1. TRATAR O \"3 MB\" -> Converter para Bytes numéricos\n  if (typeof data.total_bytes === 'string') {\n    // Pega apenas o número (ex: \"3\")\n    let valor = parseFloat(data.total_bytes);\n    \n    // Verifica a unidade e multiplica\n    if (data.total_bytes.toUpperCase().includes('MB')) {\n      // 1 MB = 1024 * 1024 bytes\n      data.total_bytes = Math.floor(valor * 1024 * 1024);\n    } else if (data.total_bytes.toUpperCase().includes('KB')) {\n      // 1 KB = 1024 bytes\n      data.total_bytes = Math.floor(valor * 1024);\n    }\n  }\n\n  // 2. CORRIGIR O ACENTO (vídeo -> video)\n  if (data.media_type && data.media_type.includes('vídeo')) {\n    data.media_type = data.media_type.replace('vídeo', 'video');\n  }\n  \n  // Retorna o item corrigido\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4240,
+        1088
+      ],
+      "id": "db45fcf0-a5ad-4556-84d0-34a08eb60403",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4688,
+        1104
+      ],
+      "id": "00a2da56-97df-4baa-b7cc-a6bcae706c5f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "command",
+              "value": "APPEND"
+            },
+            {
+              "name": "media_id",
+              "value": "={{ $json.media_id_string }}"
+            },
+            {
+              "name": "segment_index",
+              "value": "0"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "=data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        5008,
+        1104
+      ],
+      "id": "e52af628-fa51-4614-9dc1-336506d18d8d",
+      "name": "HTTP Request2",
+      "credentials": {
+        "oAuth1Api": {
+          "id": "fp3aJHCO3dQXbpKx",
+          "name": "Unnamed credential"
+        },
+        "oAuth2Api": {
+          "id": "cwKoAqGj9OTFc3Sx",
+          "name": "Unnamed credential 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3792,
+        992
+      ],
+      "id": "01eba635-daa7-462d-b04d-9894ccf29ae9",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text_post }}",
+        "additionalFields": {
+          "attachments": "={{ $('FINALIZE Upload').item.json.media_id_string }}"
+        }
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        7712,
+        1200
+      ],
+      "id": "2871ecb9-bdb8-47a9-83b2-c2c787ca7438",
+      "name": "Create Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "Y4hj4OR7PMsQsJs6",
+          "name": "X account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "command",
+              "value": "STATUS"
+            },
+            {
+              "name": "media_id",
+              "value": "={{ $json.media_id_string }}"
+            }
+          ]
+        }
+      },
+      "name": "FINALIZE Upload1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        5856,
+        1104
+      ],
+      "id": "5f5e8138-90c7-45cb-9a26-0ede287ff36a",
+      "credentials": {
+        "oAuth1Api": {
+          "id": "fp3aJHCO3dQXbpKx",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "posts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "media_id",
+              "fieldValue": "={{ $json.media_id }}"
+            },
+            {
+              "fieldId": "media_key",
+              "fieldValue": "={{ $json.media_key }}"
+            },
+            {
+              "fieldId": "video_id",
+              "fieldValue": "=tesste"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $json.processing_info.state }}"
+            },
+            {
+              "fieldId": "media_id_string",
+              "fieldValue": "={{ $json.media_id_string }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5552,
+        1104
+      ],
+      "id": "57465888-9017-412d-abab-737d2faa132d",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=essa é a analise formate esses dados \n{{ $json.content.parts[0].text }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Você é um editor de vídeos profissional especializado em viralização no TikTok e Instagram Reels. Sua tarefa é analisar o arquivo de vídeo/áudio fornecido e identificar o único melhor segmento para criar um clipe curto viral.\n\nCritérios de Seleção:\n\nFoco Musical: O trecho DEVE conter o refrão (chorus) ou o momento de maior energia (\"drop\") da música.\n\nGancho (Hook): O início do corte deve ser impactante para prender a atenção no primeiro segundo.\n\nDuração: O segmento deve ter entre 15 e 20 segundos.\n\nFluidez: O corte não pode terminar no meio de uma frase vocal. Tente encontrar um ponto de silêncio ou fim de compasso para o corte final.\n\nFormato de Resposta (OBRIGATÓRIO): Retorne APENAS um objeto JSON válido, sem markdown, sem explicações adicionais fora do JSON. Use o formato:\n\nLEMBRE-SE SEMPRE DE CONVERTER O TEMPO PARA SEGUNDOS\n\n{\n  \"start_time\": \"00\",\n  \"end_time\": 00\",\n  \"duration_seconds\": 00,\n  \"reason\": \"Explicação breve do porquê este trecho foi escolhido (ex: contém o refrão e o drop)\",\n\"post_message\":\" crie uma copy atrativa falando da previa da nova musica, e falando que o link para comprar a musica completa está em baixo(faça com que essa mensagem seja atrativa e que converse com a musica tambem, lembrando que estamos fazendo um post para o x(twitter), USE EMOJIS PARA DEIXAR ATRATIVO\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -272,
+        688
+      ],
+      "id": "9f25e0db-6060-45f0-bf2f-7e6225363c47",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        1072
+      ],
+      "id": "738fa519-b027-410c-806b-5790980c8d47",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"start_time\": \"00\",\n  \"end_time\": \"00\",\n  \"duration_seconds\": \"00\",\n  \"reason\": \"Explicação breve do porquê este trecho foi escolhido (ex: contém o refrão e o drop)\",\n\"post_message\":\" crie uma copy atrativa falando da previa da nova musica, e falando que o link para comprar a musica completa está em baixo(faça com que essa mensagem seja atrativa e que converse com a musica tambem, lembrando que estamos fazendo um post para o x(twitter)\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        1024
+      ],
+      "id": "abf3bc81-7e3f-49b2-a69e-6b5738bc210f",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        736
+      ],
+      "id": "af16c0e1-c5c5-4b30-98ae-20fecf46f174",
+      "name": "Wait2",
+      "webhookId": "9f6886b9-8a7e-42ef-afa2-c4cd8da791ad"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "118f2679-0803-465d-b572-fd80f1184390",
+              "leftValue": "={{ $json.processing_info.state }}",
+              "rightValue": "succeeded",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6288,
+        1104
+      ],
+      "id": "b065a5b8-ab97-4fff-9534-b1976d0325e6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9a0abf3d-c2cb-4c86-b0b6-9c13dac28c82",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        688
+      ],
+      "id": "1902f36d-89ae-4fd4-8862-5dbe6684f2cb",
+      "name": "Webhook",
+      "webhookId": "9a0abf3d-c2cb-4c86-b0b6-9c13dac28c82"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c8f820f-422a-4a9c-9e7f-c0325c608bf2",
+              "leftValue": "={{ $json.response.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        736
+      ],
+      "id": "494cc43b-1857-4b12-851c-0f546ef4e2e8",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "tableId": "clips",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "url_final",
+              "fieldValue": "={{ $json.response.url }}"
+            },
+            {
+              "fieldId": "motivo_escolha",
+              "fieldValue": "={{ $('AI Agent').item.json.output.reason }}"
+            },
+            {
+              "fieldId": "video_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.musica_id }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.message }}"
+            },
+            {
+              "fieldId": "shotstack_id",
+              "fieldValue": "={{ $json.response.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        720
+      ],
+      "id": "8b195043-74af-4a0e-b1a5-e39612032a4d",
+      "name": "Salva clipe",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "videos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.video_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        784
+      ],
+      "id": "5a2dbab3-6d69-40da-9b8d-16ba54de56d0",
+      "name": "busca musica ID",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "musicas",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.musica_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "url_preview",
+              "fieldValue": "={{ $('Salva clipe').item.json.url_final }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        784
+      ],
+      "id": "939cb2a3-217e-4963-996c-22a0cc55988b",
+      "name": "Salva preview na musica",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5013867c-77ac-4443-bdb0-7893776d8c32",
+              "name": "url_download",
+              "value": "={{ $json.url_preview }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2528,
+        848
+      ],
+      "id": "4a15f30f-5ec4-4815-865d-170999930276",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        6432,
+        1280
+      ],
+      "id": "b24ad721-586a-4716-b01d-fa9ae4c35db2",
+      "name": "Wait1",
+      "webhookId": "a13bf250-b9c1-4a21-8b1e-727abc955e03"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        6800,
+        1616
+      ],
+      "id": "7b11c9de-cc61-4342-91cb-3e77ace143ef",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=crie o post",
+        "options": {
+          "systemMessage": "Atuação: Você é um Especialista em Marketing Musical e Growth Hacker para o X (Twitter). Sua especialidade é criar threads e posts virais que transformam meros ouvintes em fãs engajados.\n\nDiretrizes de Estilo no X:\n\nGancho Impactante: A primeira frase deve prender a atenção (ex: \"Pare tudo o que está fazendo e ouça isso\", \"A vibe que faltava na sua playlist chegou\").\n\nLinguagem Visual: Use adjetivos que descrevam a textura do som (ex: grave hipnótico, vocais etéreos, batida frenética).\n\nFormatação: Use quebras de linha para facilitar a leitura. Use emojis de forma estratégica (não exagere).\n\nEscassez e Curiosidade: Instigue o usuário. Não conte tudo; faça-o sentir que precisa ouvir a versão completa para ter a experiência total.\n\nEstrutura do Post:\n\nHook (Gancho): Algo que pare o scroll infinito.\n\nContexto/Vibe: 1 a 2 frases descrevendo a música.\n\nSocial Proof/Sentimento: O que essa música faz a pessoa sentir?\n\nCTA (Link): Uma ordem clara com um emoji de seta ou fogo.\n\nExemplo de Tom de Voz: Energético, moderno, antenado nas tendências musicais e direto ao ponto.\n\nNão coloque links, leve a vibe da musica em consideração para criar o post, ele vai ser para o twitter então nao pode ser mais do que 140 caracteres, nao precisa colocar placeholders para colocar o link da musica, \n\nse vc nao tiver a musica, crie um post neutro para divulgação"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        6912,
+        1424
+      ],
+      "id": "8125346f-e95b-4bae-a684-d871e3e1f75b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "43b3e7e6-f8c4-4981-bab1-7e3ffb77531d",
+              "name": "text_post",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7264,
+        1072
+      ],
+      "id": "67d09a7d-6c8f-4a33-825b-f2f7d5c9fa76",
+      "name": "maping text_post"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ef70d99-bf29-423f-aa4f-48e24c958d76",
+              "name": "text_post",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7280,
+        1424
+      ],
+      "id": "ce851407-ae3b-4340-884b-456224ebaa13",
+      "name": "maping text_post1"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "=Atuação: Você é um Especialista em Marketing Musical e Growth Hacker para o X (Twitter). Sua especialidade é criar threads e posts virais que transformam meros ouvintes em fãs engajados.\n\nSua Missão: > 1. Analisar o conteúdo/vibe de um preview musical (descrito por mim ou via upload). 2. Escrever um post magnético para o X que descreva a sonoridade de forma emocional e técnica. 3. Criar uma chamada para ação (CTA) irresistível para o link da música completa.\n\nDiretrizes de Estilo no X:\n\nGancho Impactante: A primeira frase deve prender a atenção (ex: \"Pare tudo o que está fazendo e ouça isso\", \"A vibe que faltava na sua playlist chegou\").\n\nLinguagem Visual: Use adjetivos que descrevam a textura do som (ex: grave hipnótico, vocais etéreos, batida frenética).\n\nFormatação: Use quebras de linha para facilitar a leitura. Use emojis de forma estratégica (não exagere).\n\nEscassez e Curiosidade: Instigue o usuário. Não conte tudo; faça-o sentir que precisa ouvir a versão completa para ter a experiência total.\n\nEstrutura do Post:\n\nHook (Gancho): Algo que pare o scroll infinito.\n\nContexto/Vibe: 1 a 2 frases descrevendo a música.\n\nSocial Proof/Sentimento: O que essa música faz a pessoa sentir?\n\nCTA (Link): Uma ordem clara com um emoji de seta ou fogo.\n\nExemplo de Tom de Voz: Energético, moderno, antenado nas tendências musicais e direto ao ponto.\n\nNão coloque links, leve a vibe da musica em consideração para criar o post, ele vai ser para o twitter então nao pode ser mais do que 140 caracteres, nao precisa colocar placeholders para colocar o link da musica,",
+        "videoUrls": "={{ $('Download Video').item.json.url_download }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        6768,
+        1088
+      ],
+      "id": "2326a1e1-5751-48f8-af71-e0a91a371390",
+      "name": "Analisa video para text_post",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sQFoRWyVvibG7yiF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Você é um editor de vídeos profissional especializado em viralização no TikTok e Instagram Reels. Sua tarefa é analisar o arquivo de vídeo/áudio fornecido e identificar o único melhor segmento para criar um clipe curto viral.\n\nCritérios de Seleção:\n\nFoco Musical: O trecho DEVE conter o refrão (chorus) ou o momento de maior energia (\"drop\") da música.\n\nGancho (Hook): O início do corte deve ser impactante para prender a atenção no primeiro segundo.\n\nDuração: O segmento deve ter entre 15 e 20 segundos.\n\nFluidez: O corte não pode terminar no meio de uma frase vocal. Tente encontrar um ponto de silêncio ou fim de compasso para o corte final.\n\nFormato de Resposta (OBRIGATÓRIO): Retorne APENAS um objeto JSON válido, sem markdown, sem explicações adicionais fora do JSON. Use o formato:\n\nLEMBRE-SE SEMPRE DE CONVERTER O TEMPO PARA SEGUNDOS\n\n{\n  \"start_time\": \"00\",\n  \"end_time\": 00\",\n  \"duration_seconds\": 00,\n  \"reason\": \"Explicação breve do porquê este trecho foi escolhido (ex: contém o refrão e o drop)\",\n\"post_message\":\" crie uma copy atrativa falando da previa da nova musica, e falando que o link para comprar a musica completa está em baixo(faça com que essa mensagem seja atrativa e que converse com a musica tambem, lembrando que estamos fazendo um post para o x(twitter), USE EMOJIS PARA DEIXAR ATRATIVO\"\n}",
+        "videoUrls": "={{ $json.body.url_video }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        688
+      ],
+      "id": "e6e23789-d273-465d-8b52-28319b316330",
+      "name": "Analyze video1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sQFoRWyVvibG7yiF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url_download }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3376,
+        800
+      ],
+      "id": "48a4ae91-a1ac-4671-9547-11d3fe1a666e",
+      "name": "HTTP Request3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Metadata": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INIT Upload": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "FINALIZE Upload": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "INIT Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "FINALIZE Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Set Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "FINALIZE Upload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FINALIZE Upload1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Analisa video para text_post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Salva clipe",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salva clipe": {
+      "main": [
+        [
+          {
+            "node": "busca musica ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "busca musica ID": {
+      "main": [
+        [
+          {
+            "node": "Salva preview na musica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salva preview na musica": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Download Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "FINALIZE Upload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "maping text_post1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "maping text_post": {
+      "main": [
+        [
+          {
+            "node": "Create Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "maping text_post1": {
+      "main": [
+        [
+          {
+            "node": "Create Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisa video para text_post": {
+      "main": [
+        [
+          {
+            "node": "maping text_post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze video1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Analyze video1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "7fd0d6e1-e259-437c-815c-d7cd0de988b8",
+  "meta": {
+    "instanceId": "c4ed67d92dde9f339cd57141e42a741e562c9807547ee10dc2f9b2650fad6bb2"
+  },
+  "id": "Tl9NLSyWZIXJ5ggH",
+  "tags": []
+}

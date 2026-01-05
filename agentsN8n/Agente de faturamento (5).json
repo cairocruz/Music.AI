@@ -1,0 +1,1437 @@
+{
+  "name": "Agente de faturamento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "db6af30f-b148-4a30-9cbc-2766993f79e5",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        96
+      ],
+      "id": "92a9834d-8cdd-4c55-89b9-1d7845bc2a48",
+      "name": "Webhook",
+      "webhookId": "db6af30f-b148-4a30-9cbc-2766993f79e5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stripe.com/v1/checkout/sessions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "mode",
+              "value": "payment"
+            },
+            {
+              "name": "success_url",
+              "value": "=https://music-ai-d18l.onrender.com/checkout/success?session_id={CHECKOUT_SESSION_ID}&purchase_id={{ $json.id }}"
+            },
+            {
+              "name": "cancel_url",
+              "value": "=https://music-ai-d18l.onrender.com/checkout/cancel?session_id={CHECKOUT_SESSION_ID}&purchase_id={{ $json.id }}"
+            },
+            {
+              "name": "line_items[0][price_data][currency]",
+              "value": "brl"
+            },
+            {
+              "name": "line_items[0][price_data][product_data][name]",
+              "value": "={{ $json.body.purchase.title }}"
+            },
+            {
+              "name": "line_items[0][price_data][unit_amount]",
+              "value": "={{ $json.valor_pago }}"
+            },
+            {
+              "name": "line_items[0][quantity]",
+              "value": "1"
+            },
+            {
+              "name": "metadata[purchase_id]",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "metadata[music_id]",
+              "value": "={{ $json.musica_id }}"
+            },
+            {
+              "name": "metadata[user_id]",
+              "value": "={{ $json.usuario_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1936,
+        112
+      ],
+      "id": "12763d68-d995-47ee-b49b-bf12d8bf1490",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "tableId": "compras",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "usuario_id",
+              "fieldValue": "={{ $json.body.user.id }}"
+            },
+            {
+              "fieldId": "valor_pago",
+              "fieldValue": "100"
+            },
+            {
+              "fieldId": "kind",
+              "fieldValue": "={{ $json.body.purchase.kind }}"
+            },
+            {
+              "fieldId": "musica_id",
+              "fieldValue": "={{ $json.body.purchase.music_id }}"
+            },
+            {
+              "fieldId": "metodo_pagamento",
+              "fieldValue": "Stripe"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "pendente"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        16
+      ],
+      "id": "f3a24f5e-4e1b-44d3-b83b-601e5c4f9c21",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1728,
+        112
+      ],
+      "id": "5f253c3a-a1bd-4c31-bedd-dc8c321e5804",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"url\": \"={{ $('Edit Fields').item.json.url }}\",\n  \"session_id\": \"={{$json.id}}\",\n  \"purchase_id\": \"={{ $('Edit Fields').item.json.metadata.purchase_id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        2960,
+        112
+      ],
+      "id": "6bb8ed11-da9b-40cc-ac6f-871635646f2c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f266e23d-800a-4789-bf7f-cb992184825b",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "51d7e872-4d92-47d6-9e63-9033ffa57389",
+              "name": "metadata.purchase_id",
+              "value": "={{ $json.metadata.purchase_id }}",
+              "type": "string"
+            },
+            {
+              "id": "47f86264-bf51-45d1-9ceb-0b0e93c3862f",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2144,
+        112
+      ],
+      "id": "f4f19e65-47eb-4b32-88d5-b3b835913a2c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "compras",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.metadata.purchase_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stripe_session_id",
+              "fieldValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        112
+      ],
+      "id": "fa491442-04ee-4abd-a16d-9ddd67b8e7e3",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        512
+      ],
+      "id": "1b65fc8d-f849-4cc3-a893-b354cda3f3ec",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "compras",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "pendente"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        256,
+        528
+      ],
+      "id": "ca899fe5-c667-4365-85fa-94cdf0133c0f",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.stripe.com/v1/checkout/sessions/{{ $json.stripe_session_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1056,
+        544
+      ],
+      "id": "0da3b342-7ecc-405b-95aa-a5b17f1bb57f",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8141383c-db07-4dc7-b502-3f83b4669d18",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "complete",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1536,
+        544
+      ],
+      "id": "1c4093c2-f962-409f-8072-56c7aa2cb01e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "compras",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "stripe_session_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get a row').item.json.stripe_session_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "concluido"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        560
+      ],
+      "id": "8980f071-de0e-4891-a7a6-34fd58e61b94",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "495e650e-cb5c-42c9-974d-1768762efa06",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        1440
+      ],
+      "id": "5c573638-3436-48bb-8042-fb408948455c",
+      "name": "Webhook1",
+      "webhookId": "495e650e-cb5c-42c9-974d-1768762efa06"
+    },
+    {
+      "parameters": {
+        "tableId": "solicitacoes_geracao",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "usuario_id",
+              "fieldValue": "={{ $json.body.usuario_id }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "aprovado_aguardando_pagamento"
+            },
+            {
+              "fieldId": "criacao_id",
+              "fieldValue": "={{ $json.body.id }}"
+            },
+            {
+              "fieldId": "prompt",
+              "fieldValue": "={{ $json.body.inspiration_prompt }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "={{ $json.body.titulo }}"
+            },
+            {
+              "fieldId": "tema",
+              "fieldValue": "={{ $json.body.tema }}"
+            },
+            {
+              "fieldId": "input_type",
+              "fieldValue": "={{$json.body.mode === 'lyrics' ? 'lyrics' : 'prompt'}}"
+            },
+            {
+              "fieldId": "lyrics",
+              "fieldValue": "={{$json.body.mode === 'lyrics' ? $json.body.lyrics : null}}"
+            },
+            {
+              "fieldId": "prompt",
+              "fieldValue": "={{$json.body.mode === 'lyrics' ? null : $json.body.inspiration_prompt}} l"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        512,
+        1296
+      ],
+      "id": "6fc16c8d-5b94-4478-9477-dc9461a2abf7",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "compras",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "=pendente"
+            },
+            {
+              "fieldId": "kind",
+              "fieldValue": "generation_job"
+            },
+            {
+              "fieldId": "metodo_pagamento",
+              "fieldValue": "stripe"
+            },
+            {
+              "fieldId": "usuario_id",
+              "fieldValue": "={{ $json.usuario_id }}"
+            },
+            {
+              "fieldId": "valor_pago",
+              "fieldValue": "100"
+            },
+            {
+              "fieldId": "creation_id",
+              "fieldValue": "={{ $json.criacao_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1296
+      ],
+      "id": "dc424041-e7b2-48aa-ad2d-0d9eabb665b2",
+      "name": "Create a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stripe.com/v1/checkout/sessions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "mode",
+              "value": "payment"
+            },
+            {
+              "name": "success_url",
+              "value": "=https://music-ai-d18l.onrender.com/checkout/success?session_id={CHECKOUT_SESSION_ID}&purchase_id={{ $json.id }}"
+            },
+            {
+              "name": "cancel_url",
+              "value": "=https://music-ai-d18l.onrender.com/checkout/cancel?session_id={CHECKOUT_SESSION_ID}&purchase_id={{ $json.id }}"
+            },
+            {
+              "name": "line_items[0][price_data][currency]",
+              "value": "brl"
+            },
+            {
+              "name": "line_items[0][price_data][product_data][name]",
+              "value": "={{ $json.body.titulo }}"
+            },
+            {
+              "name": "line_items[0][price_data][unit_amount]",
+              "value": "={{ $json.valor_pago }}"
+            },
+            {
+              "name": "line_items[0][quantity]",
+              "value": "1"
+            },
+            {
+              "name": "metadata[purchase_id]",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "metadata[music_id]",
+              "value": "={{ $json.musica_id }}"
+            },
+            {
+              "name": "metadata[user_id]",
+              "value": "={{ $json.usuario_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1360,
+        1376
+      ],
+      "id": "962eb264-0445-4db4-a681-5fb7c2bd3a82",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1152,
+        1376
+      ],
+      "id": "e5ec5d27-05a4-44b6-ac4f-b154d1247efd",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f266e23d-800a-4789-bf7f-cb992184825b",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "51d7e872-4d92-47d6-9e63-9033ffa57389",
+              "name": "metadata.purchase_id",
+              "value": "={{ $json.metadata.purchase_id }}",
+              "type": "string"
+            },
+            {
+              "id": "47f86264-bf51-45d1-9ceb-0b0e93c3862f",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        1376
+      ],
+      "id": "96d3d208-b4d6-4826-92d8-76efd0bf660f",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Merge2').item.json.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "message": "={{ $json.output.preheader }}\n\n\n{{ $json.output.html_content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3184,
+        1232
+      ],
+      "id": "dd6550d9-d424-407a-b03f-a928631ebaea",
+      "name": "Send a message",
+      "webhookId": "f8a784b8-6da6-414a-b502-9b300dfded69",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WeMrulLKo2YSY143",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=gere um email para que a pessoa efetue o pagamento  da música que foi solicitada por ela\n\n\nesse é o link de pagamento  {{ $('Edit Fields1').item.json.url }}\n\n\no tema da música é {{ $json.tema }},\n\n\no titulo da musica é {{ $json.titulo }}\n\no nome do usuário é {{ $json.nome_completo }} use só o primeiro nome\n\n\nSe for necessario o site da plataforma music.ai é https://music-ai-d18l.onrender.com/\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Contexto\nEngenheiro de E-mail Marketing da Music.Ai, uma plataforma de tecnologia voltada para criação e curadoria musical.\n\nObjetivo\nGerar o assunto (Subject Line) e o código HTML responsivo para campanhas de e-mail, garantindo que o resultado seja entregue estritamente em formato JSON para processamento automático.\n\nInstruções Detalhadas\nFormato de Saída: O retorno deve ser exclusivamente um objeto JSON com as seguintes chaves:\n\nsubject: O assunto do e-mail otimizado para taxa de abertura.\n\npreheader: O texto de apoio que aparece logo após o assunto na caixa de entrada.\n\nhtml_content: O código HTML completo, com CSS inline e estrutura de tabelas.\n\nIdentidade Visual (Music.Ai):\n\nUse uma paleta de cores moderna (ex: tons de roxo, neon e preto).\n\nO design deve ser limpo e focado em elementos visuais que remetam a música e tecnologia.\n\nO rodapé deve conter a marca \"Enviado por Music.Ai\".\n\nRequisitos Técnicos do HTML:\n\nCompatibilidade: Tabelas (<table>) para estrutura; CSS inline para estilos.\n\nResponsividade: Largura máxima de 600px, adaptável para mobile.\n\nCTAs: Botões com bordas arredondadas e cores contrastantes.\n\nExemplos:\n\nEntrada: \"E-mail de anúncio de nova funcionalidade: Gerador de letras automático.\"\n\nSaída Esperada: {\"subject\": \"Sua próxima letra de sucesso, escrita por IA 🎶\", \"preheader\": \"Conheça o novo gerador automático da Music.Ai\", \"html_content\": \"<html>...</html>\"}\n\nRestrições:\n\nNão adicione blocos de texto explicativos fora do JSON.\n\nNão utilize scripts ou formulários dentro do HTML.\n\nNão use fontes externas sem um fallback seguro (ex: Arial).\n\nCritérios de Sucesso\nValidação JSON: O código retornado deve ser um JSON válido e parseável.\n\nQualidade do Subject: O assunto deve conter emojis pertinentes e gatilhos de curiosidade.\n\nCódigo Limpo: O HTML não deve conter erros de sintaxe que quebrem em clientes como Outlook.\n\nno caso a música está aguardando o pagamento para ser gerada"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2784,
+        1248
+      ],
+      "id": "740c76e3-48b4-4799-a8e3-6b7aa9460cc3",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        1472
+      ],
+      "id": "fc551e95-f10d-4780-a091-1f2b0df446a1",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"subject\": \"A sua trilha sonora parou? ✋\",\n  \"preheader\": \"Sua assinatura Pro da Music.Ai está esperando por você com um desconto especial.\",\n  \"html_content\": \"<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'></head><body style='margin: 0; padding: 0; background-color: #0f0f0f; font-family: Arial, sans-serif;'><table border='0' cellpadding='0' cellspacing='0' width='100%'><tr><td align='center' style='padding: 20px 0;'><table border='0' cellpadding='0' cellspacing='0' width='600' style='background-color: #1a1a1a; border-radius: 8px; color: #ffffff;'><tr><td align='center' style='padding: 40px;'><h1 style='color: #bb86fc;'>Music.Ai</h1><p style='font-size: 18px;'>Sentimos sua falta na batida!</p><p style='color: #b0b0b0;'>Vimos que você deixou o Plano Pro no carrinho. Finalize agora e libere recursos ilimitados.</p><a href='#' style='display: inline-block; padding: 15px 30px; background-color: #03dac6; color: #000000; text-decoration: none; border-radius: 25px; font-weight: bold; margin-top: 20px;'>VOLTAR PARA O CARRINHO</a></td></tr></table></td></tr></table></body></html>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2960,
+        1472
+      ],
+      "id": "6cb8bbc8-f358-4a69-9096-6f57ef11386c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2512,
+        1296
+      ],
+      "id": "9470b283-320d-4c89-a554-edec7b4e5945",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "perfis",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.usuario_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        496
+      ],
+      "id": "34562f11-0261-4e52-8ce2-4720820e16ce",
+      "name": "Get a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get a row3').item.json.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "message": "={{ $json.output.preheader }}\n\n\n{{ $json.output.html_content }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3584,
+        512
+      ],
+      "id": "88086393-3107-4f0e-89c3-d8ccbd687a7a",
+      "name": "Send a message1",
+      "webhookId": "f8a784b8-6da6-414a-b502-9b300dfded69",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WeMrulLKo2YSY143",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=gere um email falando para a pessoa que o pagamento foi confirmado e que em a música dela entrou para a esteira de desenvolvimento, e em breve a música ficará disponível na aba minhas criações do music.ai\n\ncaso  o valor do kind seja marketplace_music, vc deve escrever um email falando que o pagamento foi aprovado e que a musica já esta disponivel na aba minha biblioteca, caso seja diferente de marketplace_music, você deve falar que a musica está indo para o ambiente de desenvolvimento e em breve estara disponivel\n\n\nkind dessa musica é: {{ $('Update a row1').item.json.kind }}\n\n\no site da plataforma music.ai é https://music-ai-d18l.onrender.com/",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Contexto\nEngenheiro de E-mail Marketing da Music.Ai, uma plataforma de tecnologia voltada para criação e curadoria musical.\n\nObjetivo\nGerar o assunto (Subject Line) e o código HTML responsivo para campanhas de e-mail, garantindo que o resultado seja entregue estritamente em formato JSON para processamento automático.\n\nInstruções Detalhadas\nFormato de Saída: O retorno deve ser exclusivamente um objeto JSON com as seguintes chaves:\n\nsubject: O assunto do e-mail otimizado para taxa de abertura.\n\npreheader: O texto de apoio que aparece logo após o assunto na caixa de entrada.\n\nhtml_content: O código HTML completo, com CSS inline e estrutura de tabelas.\n\nIdentidade Visual (Music.Ai):\n\nUse uma paleta de cores moderna (ex: tons de roxo, neon e preto).\n\nO design deve ser limpo e focado em elementos visuais que remetam a música e tecnologia.\n\nO rodapé deve conter a marca \"Enviado por Music.Ai\".\n\nRequisitos Técnicos do HTML:\n\nCompatibilidade: Tabelas (<table>) para estrutura; CSS inline para estilos.\n\nResponsividade: Largura máxima de 600px, adaptável para mobile.\n\nCTAs: Botões com bordas arredondadas e cores contrastantes.\n\nExemplos:\n\nEntrada: \"E-mail de anúncio de nova funcionalidade: Gerador de letras automático.\"\n\nSaída Esperada: {\"subject\": \"Sua próxima letra de sucesso, escrita por IA 🎶\", \"preheader\": \"Conheça o novo gerador automático da Music.Ai\", \"html_content\": \"<html>...</html>\"}\n\nRestrições:\n\nNão adicione blocos de texto explicativos fora do JSON.\n\nNão utilize scripts ou formulários dentro do HTML.\n\nNão use fontes externas sem um fallback seguro (ex: Arial).\n\nCritérios de Sucesso\nValidação JSON: O código retornado deve ser um JSON válido e parseável.\n\nQualidade do Subject: O assunto deve conter emojis pertinentes e gatilhos de curiosidade.\n\nCódigo Limpo: O HTML não deve conter erros de sintaxe que quebrem em clientes como Outlook.\n\nno caso a música está aguardando o pagamento para ser gerada\n\nnao coloque placeholders"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        3120,
+        512
+      ],
+      "id": "2c282eb6-a7a2-4603-a45c-fbfb13198d3a",
+      "name": "AI Agent1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        3024,
+        656
+      ],
+      "id": "0306433c-f07c-4291-8f84-5f013720f616",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"subject\": \"A sua trilha sonora parou? ✋\",\n  \"preheader\": \"Sua assinatura Pro da Music.Ai está esperando por você com um desconto especial.\",\n  \"html_content\": \"<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'></head><body style='margin: 0; padding: 0; background-color: #0f0f0f; font-family: Arial, sans-serif;'><table border='0' cellpadding='0' cellspacing='0' width='100%'><tr><td align='center' style='padding: 20px 0;'><table border='0' cellpadding='0' cellspacing='0' width='600' style='background-color: #1a1a1a; border-radius: 8px; color: #ffffff;'><tr><td align='center' style='padding: 40px;'><h1 style='color: #bb86fc;'>Music.Ai</h1><p style='font-size: 18px;'>Sentimos sua falta na batida!</p><p style='color: #b0b0b0;'>Vimos que você deixou o Plano Pro no carrinho. Finalize agora e libere recursos ilimitados.</p><a href='#' style='display: inline-block; padding: 15px 30px; background-color: #03dac6; color: #000000; text-decoration: none; border-radius: 25px; font-weight: bold; margin-top: 20px;'>VOLTAR PARA O CARRINHO</a></td></tr></table></td></tr></table></body></html>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3360,
+        656
+      ],
+      "id": "f3e102bb-4f3a-4d16-a9a7-6b8a7b4e7af7",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "content": "## Verifica Pagamentos ",
+        "height": 656,
+        "width": 4224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -32,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "6b12cec1-f9ae-4ab5-8ef3-9a3455b422b7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## link de pagamento marketplace",
+        "height": 320,
+        "width": 3184,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "d05610ee-b729-4beb-a121-8fd201acbab8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "##gerador de pagamento para criações",
+        "height": 560,
+        "width": 3632,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        1216
+      ],
+      "id": "e097faf5-c36a-44fd-a6dd-353130c521b4",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "compras",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.metadata.purchase_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stripe_session_id",
+              "fieldValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        1376
+      ],
+      "id": "ab3fda6e-d8ee-4d6d-b942-3d8789639a51",
+      "name": "update Compra com url de pagamento",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "solicitacoes_geracao",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Create a row1').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2096,
+        1248
+      ],
+      "id": "aa4f8cb5-06bd-4de0-8800-950ab4a840e5",
+      "name": "pega solicitacao de geracao",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "perfis",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.usuario_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2096,
+        1440
+      ],
+      "id": "d4f09084-c993-4a6c-8ffe-7b1425de14cb",
+      "name": "pega id do usuário",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        496,
+        528
+      ],
+      "id": "5a1e7525-5ab9-47c7-becd-cafd0dc5c953",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3584,
+        864
+      ],
+      "id": "f1940da8-e881-4003-bdf6-c22ca8378537",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8nrender-inf8.onrender.com/webhook/2f263979-2a4b-4d6b-94e2-42abf3484a3e",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2672,
+        672
+      ],
+      "id": "50a08411-eb48-4fa0-841e-61416f376299",
+      "name": "request criador de musica"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d08fec4b-dab6-4fd7-9524-0154285c2d45",
+              "leftValue": "={{ $json.kind }}",
+              "rightValue": "marketplace_music",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2096,
+        560
+      ],
+      "id": "6dca51ec-83a1-4b96-85c4-f4e8759d3c41",
+      "name": "If1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Create a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "update Compra com url de pagamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row3": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "update Compra com url de pagamento": {
+      "main": [
+        [
+          {
+            "node": "pega solicitacao de geracao",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "pega id do usuário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pega solicitacao de geracao": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pega id do usuário": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, do nothing": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get a row3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "request criador de musica",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "431b2dac-9736-4a1d-ad72-2126aba8e726",
+  "meta": {
+    "instanceId": "c4ed67d92dde9f339cd57141e42a741e562c9807547ee10dc2f9b2650fad6bb2"
+  },
+  "id": "yYaSxQC97Nz97RTj",
+  "tags": []
+}

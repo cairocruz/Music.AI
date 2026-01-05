@@ -1,0 +1,337 @@
+{
+  "name": "modo criativo ( incomparado na aplicação)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "64acc148-a0da-43bf-bf02-fb23ba559c22",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        96
+      ],
+      "id": "e364ed78-7f1d-42f3-8868-76e0bb7d3a99",
+      "name": "Webhook",
+      "webhookId": "64acc148-a0da-43bf-bf02-fb23ba559c22"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=esse é o titulo da musica {{ $json.body.title }}, o tema da música solicitado é {{ $json.body.theme }} e a inspiração é {{ $json.body.inspiration_prompt }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Contexto\nAgente de conformidade e Propriedade Intelectual para uma plataforma de composição musical por IA.\n\nObjetivo\nAnalisar a solicitação do usuário para identificar se há pedidos de emulação de artistas reais, menção a obras protegidas ou tons inadequados (como paródias/comédia de obras sérias).\n\nInstruções Detalhadas\nFormato de saída: Retorne estritamente um JSON no seguinte formato:\n\nJSON\n\n{\n  \"status\": \"aprovado\" | \"reprovado\",\n  \"motivo\": \"Descrição detalhada do porquê da decisão\",\n  \"risco\": 1 a 10,\n  \"violacao_detectada\": \"Nome do artista ou obra se houver, caso contrário null\"\n}\nRegras de Bloqueio (Status: Reprovado):\n\nSe o usuário citar nomes de artistas ou bandas reais (ex: Racionais MC's, Taylor Swift).\n\nSe o usuário citar títulos de músicas existentes (ex: Mil faces de um homem leal).\n\nSe o usuário pedir para misturar um estilo sério/político com tom de comédia ou sátira.\n\nSe o usuário usar comandos de \"estilo de\", \"igual a\", \"inspirado em [Artista]\".\n\nExemplo de Entrada: \"Quero uma música igual do Racionais MC's Mil Faces de um Homem Leal, tema trap e comédia.\"\n\nExemplo de Saída Esperada:\n\nJSON\n\n{\n  \"status\": \"reprovado\",\n  \"motivo\": \"Solicitação viola direitos autorais ao pedir emulação direta da obra 'Mil Faces de um Homem Leal' e do grupo 'Racionais MC's'.\",\n  \"risco\": 10,\n  \"violacao_detectada\": \"Racionais MC's / Mil Faces de um Homem Leal\"\n}\nCritérios de Sucesso\nZero Tolerância: Não permitir nenhuma menção a propriedade intelectual de terceiros.\n\nDetecção de Obra: Identificar que \"Mil Faces de um Homem Leal\" é uma música real.\n\nFormato: Saída sempre em JSON puro (sem markdown de bloco de código se for para integração direta)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        640,
+        80
+      ],
+      "id": "b8bdd6de-587c-4248-9250-636671bd3228",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        400,
+        272
+      ],
+      "id": "89f97c3f-5e94-40e7-b411-4e1c95d0f707",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"status\": \"reprovado\",\n  \"motivo\": \"Solicitação viola direitos autorais ao pedir emulação direta da obra 'Mil Faces de um Homem Leal' e do grupo 'Racionais MC's'.\",\n  \"risco\": 10,\n  \"violacao_detectada\": \"Racionais MC's / Mil Faces de um Homem Leal\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        304
+      ],
+      "id": "a53094fa-4fac-4d14-bdcf-f43a8d997d82",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"{{ $json.output.status }}\",\n  \"motivo\": \"{{ $json.output.motivo }}\"  \n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1376,
+        80
+      ],
+      "id": "522a73dc-ddb8-4c01-a03b-fa56d9c300f1",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "tableId": "criacoes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "usuario_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.user.id }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "={{ $('Webhook').item.json.body.title }}"
+            },
+            {
+              "fieldId": "tema",
+              "fieldValue": "={{ $('Webhook').item.json.body.theme }}"
+            },
+            {
+              "fieldId": "mode",
+              "fieldValue": "={{ $('Webhook').item.json.body.mode }}"
+            },
+            {
+              "fieldId": "inspiration_prompt",
+              "fieldValue": "={{ $('Webhook').item.json.body.inspiration_prompt }}"
+            },
+            {
+              "fieldId": "preco",
+              "fieldValue": "100"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        80
+      ],
+      "id": "a58883c0-ca15-4a00-9c8a-5e098e13a049",
+      "name": "armazena mode inspiration",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "35a3d678-6fcc-4f0b-b922-56e202b70dae",
+              "leftValue": "={{ $json.output.status }}",
+              "rightValue": "=aprovado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        96
+      ],
+      "id": "4ff2cde8-a4c5-41d0-a386-1f98bd22d2aa",
+      "name": "If1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        80
+      ],
+      "id": "2f3b851e-4be7-419a-a480-ee6d7e2281cd",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "content": "## agente para verificação da musica que foi inputada no site",
+        "height": 784,
+        "width": 4144
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "0d29cd15-a488-4e99-83af-efa23d03d1d2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"{{ $json.output.status }}\",\n  \"motivo\": \"{{ $json.output.motivo }}\"  \n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1376,
+        272
+      ],
+      "id": "f3a83cc1-6838-48bf-aba7-608c9174c1e6",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8nrender-inf8.onrender.com/webhook/495e650e-cb5c-42c9-974d-1768762efa06",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2256,
+        80
+      ],
+      "id": "21000588-e7d2-4052-ad1c-9e13f67ae46b",
+      "name": "Agent de faturamento"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "armazena mode inspiration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "armazena mode inspiration": {
+      "main": [
+        [
+          {
+            "node": "Agent de faturamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent de faturamento": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "7aa797b8-0abf-4c4a-8ca0-54c8934cd7d2",
+  "meta": {
+    "instanceId": "c4ed67d92dde9f339cd57141e42a741e562c9807547ee10dc2f9b2650fad6bb2"
+  },
+  "id": "l96f6MjBJWp4xCUu",
+  "tags": []
+}

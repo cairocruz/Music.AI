@@ -1,0 +1,1333 @@
+{
+  "name": "criador de musica Schedule",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sunoapi.org/api/v1/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customMode\": true,\n  \"instrumental\": false,\n  \"model\": \"V4_5ALL\",\n  \"callBackUrl\": \"https://example.com/callback\",\n  \"prompt\": \"{{ $json.output.prompt }}\",\n  \"style\": \"{{ $json.output.style }}\",\n  \"title\": \"{{ $json.output.title }}\",\n  \"personaId\": \"clautech_main_v1\",\n  \"negativeTags\": \"{{ $json.output.negativeTags }}\",\n  \"vocalGender\": \"{{ $json.output.vocalGender }}\",\n  \"styleWeight\": {{ $json.output.styleWeight }},\n  \"weirdnessConstraint\": {{ $json.output.weirdnessConstraint }},\n  \"audioWeight\": {{ $json.output.audioWeight }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1472,
+        192
+      ],
+      "id": "c575f110-d92c-40ab-a5cc-ebca0b7b3436",
+      "name": "Criar música"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sunoapi.org/api/v1/mp4/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            },
+            {
+              "name": "audioId",
+              "value": "={{ $json.data.response.sunoData[0].id }}"
+            },
+            {
+              "name": "callBackUrl",
+              "value": "https://api.example.com/callback"
+            },
+            {
+              "name": "author",
+              "value": "MusicAI"
+            },
+            {
+              "name": "domainName",
+              "value": "MusicAI"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2832,
+        256
+      ],
+      "id": "8b979e22-22fb-4ce1-88ed-6c46c756a7d7",
+      "name": "Geração do video"
+    },
+    {
+      "parameters": {
+        "tableId": "musicas",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "suno_task_id",
+              "fieldValue": "={{ $json.data.response.taskId }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "={{ $json.data.response.sunoData[0].title }}"
+            },
+            {
+              "fieldId": "estilo",
+              "fieldValue": "={{ $json.data.response.sunoData[0].tags }}"
+            },
+            {
+              "fieldId": "url_download",
+              "fieldValue": "={{ $json.data.response.sunoData[0].sourceAudioUrl }}"
+            },
+            {
+              "fieldId": "duracao_segundos",
+              "fieldValue": "={{ $json.data.response.sunoData[1].duration }}"
+            },
+            {
+              "fieldId": "id_music",
+              "fieldValue": "={{ $json.data.response.sunoData[0].id }}"
+            },
+            {
+              "fieldId": "capa_url",
+              "fieldValue": "={{ $json.data.response.sunoData[0].imageUrl }}"
+            },
+            {
+              "fieldId": "em_venda",
+              "fieldValue": "TRUE"
+            },
+            {
+              "fieldId": "preco",
+              "fieldValue": "1,00"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2832,
+        80
+      ],
+      "id": "e95d3d9b-70ad-454a-9867-de1a40d666cb",
+      "name": "Guarda música",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.sunoapi.org/api/v1/generate/record-info",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1984,
+        192
+      ],
+      "id": "69bf56f3-415f-410f-923e-5a9aaff88fcf",
+      "name": "Recupera música"
+    },
+    {
+      "parameters": {
+        "url": "https://api.sunoapi.org/api/v1/mp4/record-info ",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3264,
+        176
+      ],
+      "id": "c26547ae-335d-46d5-bfc2-d4270969fa71",
+      "name": "Recupera vídeo"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"customMode\": true,\n  \"instrumental\": false,\n  \"model\": \"V4_5ALL\",\n  \"callBackUrl\": \"https://api.example.com/callback\",\n  \"prompt\": \"[Intro]\\nClau-Tech!\\nAbrindo o portal... dois mil e vinte e seis.\\nVersão 6G, atualizada.\\n\\n[Verse 1]\\nO cinco G ficou no passado, a rede agora voa\\nMeu beijo é pixelado, mas a química é boa\\nO grave bateu no peito, fez o download da emoção\\nNão tem firewall que segure essa pressão\\n\\n[Pre-Chorus]\\nO algoritmo já sabe, não tem como negar\\nÉ velocidade luz pra gente se conectar\\nVapo, vapo\\nCarregando o sistema...\\nSolta o grave do problema!\\n\\n[Chorus]\\nÉ o Paredão Seis G, velocidade máxima\\nA poeira sobe e vira nuvem de fumaça\\nTu tá hackeado, preso no meu loop\\nClauTech no comando, vem curtir o grupo\\nTuru-turu-turu digital\\n\\n[Bridge]\\nAgora desce, desce, no modo automático\\nAndroid, ciborgue, ou menino prático\\nTrava, destrava, reinicia e vai\\nNo passinho do robô, o sistema cai\\n\\n[Outro]\\nAtualização concluída.\\nClauTech.\\nA nova era.\\nDeslogando.\",\n  \"style\": \"Piseiro, Brazilian Funk, Tech Pop, Electronic, Teclado, Synthesizer, Futurism, Danceable, Female Vocals, Upbeat, 160 BPM\",\n  \"title\": \"Paredão 7G\",\n  \"personaId\": \"clautech_main_v1\",\n  \"negativeTags\": \"Acoustic, Slow, Jazz, Rock, Male Vocals, Ballad, Lo-fi, Melancholic\",\n  \"vocalGender\": \"f\",\n  \"styleWeight\": 0.8,\n  \"weirdnessConstraint\": 0.4,\n  \"audioWeight\": 0.6\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1184,
+        384
+      ],
+      "id": "dacaad74-6709-4e68-9ab8-b24697584d69",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        784,
+        384
+      ],
+      "id": "c236cc00-0b1c-463d-8dc2-63de1d12a6f2",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "temas_musicais",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "foi_usado",
+              "condition": "eq",
+              "keyValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        192
+      ],
+      "id": "63b94a3c-3fc3-45ec-805f-e1138400ca94",
+      "name": "pega tema da musica do dia",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Crie uma música baseada no tema:  {{ $json.tema }} e que seja com o ritmo de {{ $json.categoria }}",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "Agência de produção musical baseada em IA e serviços de streaming que utilizam modelos generativos de áudio de alta performance (como Suno, Udio ou modelos proprietários).\n\n2. Objetivo Gerar composições musicais completas (letras estruturadas, estilos detalhados e parâmetros técnicos) que tenham potencial de \"hit\", entregando os dados estritamente em formato JSON para fácil processamento.\n\n3. Instruções Detalhadas\n\nFormato de Saída: A saída deve ser um Array de Objetos JSON. Cada objeto deve conter as chaves: customMode, instrumental, model, callBackUrl, prompt, style, title, personaId, negativeTags, vocalGender, styleWeight, weirdnessConstraint e audioWeight.\n\nEstrutura do prompt (Letra): A letra deve seguir uma estrutura profissional de música pop: [Intro], [Verse], [Pre-Chorus], [Chorus], [Bridge] e [Outro].\n\nConfiguração de Estilo: O campo style deve listar gêneros, instrumentos, BPM e energia da música, separados por vírgula.\n\nParâmetros Técnicos:\n\nvocalGender: \"f\" (feminino) ou \"m\" (masculino).\n\nstyleWeight: Valor entre 0.0 e 1.0.\n\nweirdnessConstraint: Valor entre 0.0 e 1.0 (nível de experimentação).\n\nTom e Estilo: Criativo, moderno, focado em tendências virais (TikTok/Reels) e rimas chicletes.\n\nRestrições: Não use rimas óbvias demais ou clichês de \"amor/dor\" sem um toque moderno. Evite linguagem ofensiva.\n\n4. Critérios de Sucesso\n\nValidação Sintática: O JSON deve ser válido e pronto para ser lido por um script.\n\nCriatividade Musical: As letras devem ter ritmo (métrica) e os estilos devem ser coerentes entre si.\n\nAderência ao Esquema: Todos os campos solicitados no exemplo devem estar presentes\n\nnao use /n ou coisas que quebrme as strings"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        896,
+        192
+      ],
+      "id": "d6c5031b-295f-455f-b88f-10cfdc8d1178",
+      "name": "Agente criado da musica"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        928,
+        384
+      ],
+      "id": "213b5543-211f-4519-8d2f-b6e415d82208",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        192
+      ],
+      "id": "0f7bedf1-2f9a-42dc-abc1-9bd4561b762b",
+      "name": "Wait",
+      "webhookId": "8e124d0e-93ec-48b5-b8ce-49ce83669120"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2aee482c-82de-42bd-b242-c505fc8a471b",
+              "leftValue": "={{ $json.data.response.sunoData[0].sourceAudioUrl }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        192
+      ],
+      "id": "102b650d-a779-427c-ac30-f5869f205469",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bf19470a-e91d-42e6-ac51-515b8e75104e",
+              "leftValue": "={{$json[\"data\"][\"successFlag\"]}}",
+              "rightValue": "=SUCCESS",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3808,
+        176
+      ],
+      "id": "32b07efe-707f-440f-a110-0e8875b59418",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3568,
+        176
+      ],
+      "id": "975f3b34-1474-4d39-a0f5-9ea996701724",
+      "name": "Wait1",
+      "webhookId": "8e8f5c3f-3d99-4e28-bf35-16c2be9a6528"
+    },
+    {
+      "parameters": {
+        "tableId": "videos",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "musica_id",
+              "fieldValue": "={{ $json.id }}"
+            },
+            {
+              "fieldId": "url_video",
+              "fieldValue": "={{ $json.data.response.videoUrl }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.data.successFlag }}"
+            },
+            {
+              "fieldId": "capa_url",
+              "fieldValue": "={{ $json.capa_url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4528,
+        160
+      ],
+      "id": "8e72a9fe-770d-41c8-9156-70d4be4e1949",
+      "name": "Guarda Video",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "musicas",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_music",
+              "keyValue": "={{ $json.data.musicId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        32
+      ],
+      "id": "11441f40-8c83-47a2-97f3-06e70e2078bf",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4288,
+        160
+      ],
+      "id": "a5048f85-24ca-4d32-9db2-dc029f9aa6f0",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sunoapi.org/api/v1/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customMode\": true,\n  \"instrumental\": false,\n  \"model\": \"V4_5ALL\",\n  \"callBackUrl\": \"https://example.com/callback\",\n  \"prompt\": \"{{ $json.output.prompt }}\",\n  \"style\": \"{{ $json.output.style }}\",\n  \"title\": \"{{ $json.output.title }}\",\n  \"personaId\": \"clautech_main_v1\",\n  \"negativeTags\": \"{{ $json.output.negativeTags }}\",\n  \"vocalGender\": \"{{ $json.output.vocalGender }}\",\n  \"styleWeight\": {{ $json.output.styleWeight }},\n  \"weirdnessConstraint\": {{ $json.output.weirdnessConstraint }},\n  \"audioWeight\": {{ $json.output.audioWeight }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1312,
+        848
+      ],
+      "id": "0537dfc8-c9ed-474d-84a7-5ab0ce3948f6",
+      "name": "Criar música1"
+    },
+    {
+      "parameters": {
+        "tableId": "musicas",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "suno_task_id",
+              "fieldValue": "={{ $json.data.response.taskId }}"
+            },
+            {
+              "fieldId": "titulo",
+              "fieldValue": "={{ $json.data.response.sunoData[0].title }}"
+            },
+            {
+              "fieldId": "estilo",
+              "fieldValue": "={{ $json.data.response.sunoData[0].tags }}"
+            },
+            {
+              "fieldId": "url_download",
+              "fieldValue": "={{ $json.data.response.sunoData[0].sourceAudioUrl }}"
+            },
+            {
+              "fieldId": "duracao_segundos",
+              "fieldValue": "={{ $json.data.response.sunoData[1].duration }}"
+            },
+            {
+              "fieldId": "id_music",
+              "fieldValue": "={{ $json.data.response.sunoData[0].id }}"
+            },
+            {
+              "fieldId": "capa_url",
+              "fieldValue": "={{ $json.data.response.sunoData[0].imageUrl }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        736
+      ],
+      "id": "172374b3-af55-4ddd-9054-5e2ba5cac12b",
+      "name": "Guarda música1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.sunoapi.org/api/v1/generate/record-info",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{ $json.data.taskId }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "your_api_key_here"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2000,
+        864
+      ],
+      "id": "fd53899b-df10-4240-b3e4-797e7d1881cd",
+      "name": "Recupera música1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"customMode\": true,\n  \"instrumental\": false,\n  \"model\": \"V4_5ALL\",\n  \"callBackUrl\": \"https://api.example.com/callback\",\n  \"prompt\": \"[Intro]\\nClau-Tech!\\nAbrindo o portal... dois mil e vinte e seis.\\nVersão 6G, atualizada.\\n\\n[Verse 1]\\nO cinco G ficou no passado, a rede agora voa\\nMeu beijo é pixelado, mas a química é boa\\nO grave bateu no peito, fez o download da emoção\\nNão tem firewall que segure essa pressão\\n\\n[Pre-Chorus]\\nO algoritmo já sabe, não tem como negar\\nÉ velocidade luz pra gente se conectar\\nVapo, vapo\\nCarregando o sistema...\\nSolta o grave do problema!\\n\\n[Chorus]\\nÉ o Paredão Seis G, velocidade máxima\\nA poeira sobe e vira nuvem de fumaça\\nTu tá hackeado, preso no meu loop\\nClauTech no comando, vem curtir o grupo\\nTuru-turu-turu digital\\n\\n[Bridge]\\nAgora desce, desce, no modo automático\\nAndroid, ciborgue, ou menino prático\\nTrava, destrava, reinicia e vai\\nNo passinho do robô, o sistema cai\\n\\n[Outro]\\nAtualização concluída.\\nClauTech.\\nA nova era.\\nDeslogando.\",\n  \"style\": \"Piseiro, Brazilian Funk, Tech Pop, Electronic, Teclado, Synthesizer, Futurism, Danceable, Female Vocals, Upbeat, 160 BPM\",\n  \"title\": \"Paredão 7G\",\n  \"personaId\": \"clautech_main_v1\",\n  \"negativeTags\": \"Acoustic, Slow, Jazz, Rock, Male Vocals, Ballad, Lo-fi, Melancholic\",\n  \"vocalGender\": \"f\",\n  \"styleWeight\": 0.8,\n  \"weirdnessConstraint\": 0.4,\n  \"audioWeight\": 0.6\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        1040
+      ],
+      "id": "103d2d6d-e459-4eac-bf2a-1518617ebc0a",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        720,
+        1040
+      ],
+      "id": "46ad4dad-faa9-433b-83b5-cbb3ea26fef1",
+      "name": "Groq Chat Model2",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Crie uma música baseada nisso: {{ $json.inspiration_prompt }}  e que seja com o ritmo {{ $json.tema }} e o titulo é da musica é: {{ $json.titulo }}, crie a letra sempre no idioma portugues do brasil",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "Agência de produção musical baseada em IA e serviços de streaming que utilizam modelos generativos de áudio de alta performance (como Suno, Udio ou modelos proprietários).\n\n2. Objetivo Gerar composições musicais completas (letras estruturadas, estilos detalhados e parâmetros técnicos) que tenham potencial de \"hit\", entregando os dados estritamente em formato JSON para fácil processamento.\n\n3. Instruções Detalhadas\n\nFormato de Saída: A saída deve ser um Array de Objetos JSON. Cada objeto deve conter as chaves: customMode, instrumental, model, callBackUrl, prompt, style, title, personaId, negativeTags, vocalGender, styleWeight, weirdnessConstraint e audioWeight.\n\nEstrutura do prompt (Letra): A letra deve seguir uma estrutura profissional de música pop: [Intro], [Verse], [Pre-Chorus], [Chorus], [Bridge] e [Outro].\n\nConfiguração de Estilo: O campo style deve listar gêneros, instrumentos, BPM e energia da música, separados por vírgula.\n\nParâmetros Técnicos:\n\nvocalGender: \"f\" (feminino) ou \"m\" (masculino).\n\nstyleWeight: Valor entre 0.0 e 1.0.\n\nweirdnessConstraint: Valor entre 0.0 e 1.0 (nível de experimentação).\n\nTom e Estilo: Criativo, moderno, focado em tendências virais (TikTok/Reels) e rimas chicletes.\n\nRestrições: Não use rimas óbvias demais ou clichês de \"amor/dor\" sem um toque moderno. Evite linguagem ofensiva.\n\n4. Critérios de Sucesso\n\nValidação Sintática: O JSON deve ser válido e pronto para ser lido por um script.\n\nCriatividade Musical: As letras devem ter ritmo (métrica) e os estilos devem ser coerentes entre si.\n\nAderência ao Esquema: Todos os campos solicitados no exemplo devem estar presentes\n\nnao use /n ou coisas que quebrme as strings"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        848,
+        848
+      ],
+      "id": "c9ea396b-4ac4-4503-ba27-fcbf9efc62c5",
+      "name": "Agente criado da musica1"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        864,
+        1040
+      ],
+      "id": "117fb4a8-4d1a-4289-b83e-05b26a125486",
+      "name": "Groq Chat Model3",
+      "credentials": {
+        "groqApi": {
+          "id": "cGnfCwP3UmtFdKCH",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        864
+      ],
+      "id": "6e3130e9-73f6-4ea2-a37e-75212650629a",
+      "name": "Wait2",
+      "webhookId": "8e124d0e-93ec-48b5-b8ce-49ce83669120"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2aee482c-82de-42bd-b242-c505fc8a471b",
+              "leftValue": "={{ $json.data.response.sunoData[0].sourceAudioUrl }}",
+              "rightValue": "2",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        864
+      ],
+      "id": "2e4952dd-f357-475b-b40f-94cd2d25fdd7",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2f263979-2a4b-4d6b-94e2-42abf3484a3e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        848
+      ],
+      "id": "b0530a0e-a6ef-4040-ad17-e42d1daf9110",
+      "name": "Webhook",
+      "webhookId": "2f263979-2a4b-4d6b-94e2-42abf3484a3e"
+    },
+    {
+      "parameters": {
+        "content": "## Webhook modo criativo",
+        "height": 496,
+        "width": 3360,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -16,
+        688
+      ],
+      "typeVersion": 1,
+      "id": "69026af2-73c3-4f4e-9047-ecbebeca6ab9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Schedule para criação de musica",
+        "height": 496,
+        "width": 4944,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "d38d51fa-b63d-46fa-a758-cb2f58eba6c1",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "criacoes",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.creation_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        416,
+        848
+      ],
+      "id": "c8a5af14-f19c-4809-ba1d-b972b63f5381",
+      "name": "Get a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8nrender-inf8.onrender.com/webhook/9a0abf3d-c2cb-4c86-b0b6-9c13dac28c82",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "musica_id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "url_video",
+              "value": "={{ $json.url_video }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4768,
+        160
+      ],
+      "id": "5a602604-190c-4924-9ac2-9ac6c937457e",
+      "name": "agent de marketing"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "compras",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Webhook').item.json.body.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "musica_id",
+              "fieldValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2912,
+        736
+      ],
+      "id": "59064d5d-4acc-4b01-9c5c-639a63abe410",
+      "name": "salva musica em compras",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \ndepois de criado precisa atualizar a tabela criaçoes para status de pronto",
+        "height": 752,
+        "width": 464
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3408,
+        624
+      ],
+      "typeVersion": 1,
+      "id": "742f2f70-8123-4188-840f-9fce119e86ff",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "temas_musicais",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('pega tema da musica do dia').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "foi_usado",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3040,
+        80
+      ],
+      "id": "9bedd93f-507f-420a-bb88-a0aeb14709d0",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        112,
+        192
+      ],
+      "id": "431d0f7d-d3c0-4b60-83dc-8f3860992b6f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "criacoes",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.creation_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "pronto"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3120,
+        736
+      ],
+      "id": "ef288319-02ca-42a0-b35e-f661dff39378",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "c6s7dGaqansXuetB",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Criar música": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geração do video": {
+      "main": [
+        [
+          {
+            "node": "Recupera vídeo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recupera música": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recupera vídeo": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente criado da musica",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente criado da musica",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pega tema da musica do dia": {
+      "main": [
+        [
+          {
+            "node": "Agente criado da musica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente criado da musica": {
+      "main": [
+        [
+          {
+            "node": "Criar música",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente criado da musica",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Recupera música",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Guarda música",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Geração do video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Recupera vídeo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guarda Video": {
+      "main": [
+        [
+          {
+            "node": "agent de marketing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Guarda Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar música1": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recupera música1": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente criado da musica1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente criado da musica1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente criado da musica1": {
+      "main": [
+        [
+          {
+            "node": "Criar música1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente criado da musica1",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Recupera música1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Guarda música1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guarda música1": {
+      "main": [
+        [
+          {
+            "node": "salva musica em compras",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row3": {
+      "main": [
+        [
+          {
+            "node": "Agente criado da musica1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guarda música": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "pega tema da musica do dia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "salva musica em compras": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b65c1a66-8264-44a5-96b2-8de38e42e466",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4ed67d92dde9f339cd57141e42a741e562c9807547ee10dc2f9b2650fad6bb2"
+  },
+  "id": "Fz2bveX1mOofY43W",
+  "tags": []
+}
