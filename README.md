@@ -46,11 +46,14 @@ Para facilitar testes, esta aplicação foi publicada no Render:
 Em alto nível:
 - Nome do projeto: Music.AI
 - Tipo: Web (SPA) + API (Express)
-- Objetivo do teste (1–2 frases): <<<PREENCHER>>>
+- Objetivo do teste (1–2 frases): Autonomous music generation company com criação diária de músicas via IA, billing recorrente e marketing automatizado.
 - Requisitos do desafio (bullets):
-  - <<<PREENCHER>>>
-- O que foi entregue (bullets):
-  - <<<PREENCHER>>>
+  - Music Agent: gerar música por IA diariamente (Suno, Diff-Singer, Riffusion)
+  - Billing Agent: lidar com pagamento mensal (US$ 1)
+  - Marketing Agent: postar em redes sociais com amostras
+  - Bonus: playlist builder estilo Spotify
+  - Bonus: geração baseada em mood
+- O que foi entregue (bullets): <<<PREENCHER>>>
 - Stack: TypeScript + React (Vite) + Node.js/Express + Supabase + n8n + Stripe + SunoAPI + Shotstack
 
 1. **Frontend (Vite + React)**: UI (Login, Home, Marketplace, Player, etc.)
