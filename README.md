@@ -10,7 +10,7 @@
 
 **Music.AI** é uma plataforma web para **gerar músicas com IA**, publicar no **Marketplace**, vender via **checkout (Stripe)** e acionar **agentes (n8n)** por webhooks para automações (criação, marketing, etc.).
 
-> 🚀 **Destaque:** O **Frontend** desta aplicação (site/interface) foi desenvolvido utilizando o **Google AI Studio**. A interface visual e a estrutura inicial foram aceleradas graças ao poder do Google Gemini.
+> 🚀 **Destaque:** [X/Twitter](https://x.com/musicAiBrasil).
 
 ---
 
